@@ -38,6 +38,10 @@ There is no login (stubbed on purpose). The start screen lists the demo users; *
 
 A two-minute tour: **Marta** → open a *Pending* Voltra reply → review it → **Dashboard**, filter *Voltra Scooters* → **Switch user** → **Dani** → *My Reviews*.
 
+## Demo video
+
+[`docs/demo/walkthrough.mp4`](docs/demo/walkthrough.mp4) (1 min 42 s): a Team Lead reviews a reply against the brand's guidelines, the brand dashboard updates, a second Team Lead cannot edit it, the Specialist reads the feedback, and requests sent straight to the server as a Specialist and as a Team Lead of another brand get 403/404. It ends with the results of the automated test run (41 Vitest, 7 Playwright).
+
 ## Seed data
 
 `supabase/seed.sql`, invented for this exercise and deterministic (fixed ids and dates): three brands that want very different replies (a scooter maker that wants diagnosis before refunds, a packaging supplier that wants three exact lines, a home decor shop that wants warmth and order-history checks), 21 replies over four weeks, 15 of them reviewed, including some obviously bad ones.
