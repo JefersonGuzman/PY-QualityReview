@@ -1,17 +1,35 @@
+import { Suspense } from "react";
 import Link from "next/link";
+import { ListSkeleton } from "@/components/skeletons";
 import { Card, EmptyState, FOCUS, PageTitle, Score, StatusBadge, buttonClass } from "@/components/ui";
 import { listResponsesForTeamLead } from "@/lib/data/responses";
 import { requireRole } from "@/lib/data/session";
 import { listBrandsForUser } from "@/lib/data/users";
 import { formatDate } from "@/lib/domain/format";
-import type { ReviewStatus } from "@/lib/domain/types";
+import type { ReviewStatus, User } from "@/lib/domain/types";
 
 const SELECT = `h-10 rounded-lg border border-border-strong bg-surface px-3 shadow-card ${FOCUS}`;
 
 // Team Lead: responses of their brands, filterable by brand and status.
+type SearchParams = Awaited<PageProps<"/responses">["searchParams"]>;
+
 export default async function ResponsesPage({ searchParams }: PageProps<"/responses">) {
+  // Role check before anything streams, so a wrong role still gets a real 403.
   const user = await requireRole("team_lead");
   const params = await searchParams;
+
+  return (
+    <>
+      <PageTitle>Responses</PageTitle>
+      <p className="mt-2 text-muted">Customer support responses from your brands.</p>
+      <Suspense key={JSON.stringify(params)} fallback={<ListSkeleton label="Loading responses" />}>
+        <ResponsesContent user={user} params={params} />
+      </Suspense>
+    </>
+  );
+}
+
+async function ResponsesContent({ user, params }: { user: User; params: SearchParams }) {
   const brands = await listBrandsForUser(user);
 
   const brandId = typeof params.brand === "string" && brands.some((b) => b.id === params.brand) ? params.brand : undefined;
@@ -21,9 +39,6 @@ export default async function ResponsesPage({ searchParams }: PageProps<"/respon
 
   return (
     <>
-      <PageTitle>Responses</PageTitle>
-      <p className="mt-2 text-muted">Customer support responses from your brands.</p>
-
       <form method="get" className="mt-6 flex flex-wrap items-end gap-3">
         <div className="flex flex-col gap-1">
           <label htmlFor="brand-filter" className="text-[13px] leading-[18px] font-medium">
