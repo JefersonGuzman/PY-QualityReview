@@ -1,36 +1,79 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Sellervate Quality Review
 
-## Getting Started
+Internal tool to review customer support replies **after** they were sent.
 
-First, run the development server:
+- **Team Leads** read replies from the brands they lead, next to that brand's own definition of a good reply, and record a score (1-5), what was wrong and written feedback.
+- **Specialists** read the scores and feedback on their own replies, and nobody else's.
+- Each brand gets **evidence**: the trend by week and what keeps going wrong.
+
+It is not a helpdesk and not an AI product: scores always come from a person. Why this reading of the brief, and what was left out, is in [`DECISIONS.md`](DECISIONS.md).
+
+---
+
+## Run it (about 5 minutes)
+
+Requirements: **Node.js 20+**, **npm** and **Docker Desktop running** (the local Supabase database runs in Docker).
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/JefersonGuzman/PY-QualityReview.git
+cd PY-QualityReview
+npm install
+npm run db:start      # local Supabase database: applies migrations and loads the seed
+npm run dev           # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The first `db:start` downloads the Postgres image (a couple of minutes). Reset the data to the seed at any time with `npm run db:reset`. The app uses `postgresql://postgres:postgres@127.0.0.1:54322/postgres` by default; to point it elsewhere, copy `.env.example` to `.env.local`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Switch role
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+There is no login (stubbed on purpose). The start screen lists the demo users; **Switch user** in the header goes back to it.
 
-## Learn More
+| User | Role | Brands |
+|---|---|---|
+| Marta Vidal | Team Lead | Voltra Scooters, Lumen Home |
+| Nuria Costa | Team Lead | Boxwell Packaging, Lumen Home |
+| Dani Ortega | Specialist | Voltra Scooters, Boxwell Packaging |
+| Leo Martin | Specialist | Voltra Scooters, Lumen Home |
+| Priya Shah | Specialist | Boxwell Packaging, Lumen Home |
 
-To learn more about Next.js, take a look at the following resources:
+A two-minute tour: **Marta** → open a *Pending* Voltra reply → review it → **Dashboard**, filter *Voltra Scooters* → **Switch user** → **Dani** → *My Reviews*.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Seed data
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+`supabase/seed.sql`, invented for this exercise and deterministic (fixed ids and dates): three brands that want very different replies (a scooter maker that wants diagnosis before refunds, a packaging supplier that wants three exact lines, a home decor shop that wants warmth and order-history checks), 21 replies over four weeks, 15 of them reviewed, including some obviously bad ones.
 
-## Deploy on Vercel
+## Tests
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+With the database running:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm run lint
+npm run test                      # Vitest: rules, data access and brand isolation against the local database
+npx playwright install chromium   # first time only
+npm run test:e2e                  # Playwright: main journeys against a production build
+```
+
+## Stack
+
+Next.js 16 (App Router) · TypeScript (strict) · Supabase (local PostgreSQL) · Tailwind CSS 4 · Vitest · Playwright.
+Started from `create-next-app` (no other starter kit). Visual rules: [`DESIGN.md`](DESIGN.md). Behavior per slice: [`docs/spec.md`](docs/spec.md).
+
+```text
+app/                  routes; app/(app)/ holds the pages behind the header, app/api/ the JSON API
+components/           UI built only with DESIGN.md tokens
+lib/domain/           pure rules (review validation, identity cookie, types)
+lib/data/             server-only data access; every query is scoped to the current user
+supabase/migrations/  schema and data rules (constraints, triggers)
+supabase/seed.sql     demo data
+tests/                unit, database and end-to-end tests
+```
+
+## How it was built
+
+Small branches, one pull request each, reviewed in writing on GitHub before merging. The code was written with an AI coding agent; see the AI section of `DECISIONS.md`.
+
+## Time spent
+
+```text
+Actual implementation time: TBD
+```
