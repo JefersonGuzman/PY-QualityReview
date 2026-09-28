@@ -1,9 +1,12 @@
+import { Suspense } from "react";
 import Link from "next/link";
+import { DashboardSkeleton } from "@/components/skeletons";
 import { Card, EmptyState, FOCUS, PageTitle, Score, SectionTitle, buttonClass } from "@/components/ui";
 import { getTeamLeadDashboard } from "@/lib/data/dashboard";
 import { requireRole } from "@/lib/data/session";
 import { listBrandsForUser } from "@/lib/data/users";
 import { formatAverage, formatDate } from "@/lib/domain/format";
+import type { Brand, User } from "@/lib/domain/types";
 
 const TH = "bg-surface-muted px-4 py-2 text-left text-[13px] leading-[18px] font-medium";
 const TD = "border-t border-border px-4 py-2";
@@ -11,10 +14,50 @@ const SELECT = `h-10 rounded-lg border border-border-strong bg-surface px-3 shad
 
 // Team Lead: the evidence to show a brand — trend, recurring issues, who needs coaching.
 export default async function DashboardPage({ searchParams }: PageProps<"/dashboard">) {
+  // Role check before anything streams, so a wrong role still gets a real 403.
   const user = await requireRole("team_lead");
   const params = await searchParams;
   const brands = await listBrandsForUser(user);
   const brand = brands.find((b) => b.id === params.brand);
+
+  return (
+    <>
+      <PageTitle>{brand ? brand.name : "Dashboard"}</PageTitle>
+      <p className="mt-2 text-muted">
+        {brand ? "Quality evidence for this brand." : "Quality overview of all your brands."}
+      </p>
+      <BrandFilter brands={brands} selected={brand?.id} />
+      <Suspense key={brand?.id ?? "all"} fallback={<DashboardSkeleton label="Loading dashboard" />}>
+        <DashboardContent user={user} brand={brand} />
+      </Suspense>
+    </>
+  );
+}
+
+function BrandFilter({ brands, selected }: { brands: Brand[]; selected?: string }) {
+  return (
+    <form method="get" className="mt-6 flex flex-wrap items-end gap-3">
+      <div className="flex flex-col gap-1">
+        <label htmlFor="brand-filter" className="text-[13px] leading-[18px] font-medium">
+          Brand
+        </label>
+        <select id="brand-filter" name="brand" defaultValue={selected ?? ""} className={SELECT}>
+          <option value="">All my brands</option>
+          {brands.map((b) => (
+            <option key={b.id} value={b.id}>
+              {b.name}
+            </option>
+          ))}
+        </select>
+      </div>
+      <button type="submit" className={buttonClass("secondary")}>
+        Show
+      </button>
+    </form>
+  );
+}
+
+async function DashboardContent({ user, brand }: { user: User; brand?: Brand }) {
   const dashboard = await getTeamLeadDashboard(user, brand?.id);
   if (!dashboard) return null;
   const { totals, weekly, byBrand, bySpecialist, commonIssues, recentReviews } = dashboard;
@@ -28,30 +71,6 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
 
   return (
     <>
-      <PageTitle>{brand ? brand.name : "Dashboard"}</PageTitle>
-      <p className="mt-2 text-muted">
-        {brand ? "Quality evidence for this brand." : "Quality overview of all your brands."}
-      </p>
-
-      <form method="get" className="mt-6 flex flex-wrap items-end gap-3">
-        <div className="flex flex-col gap-1">
-          <label htmlFor="brand-filter" className="text-[13px] leading-[18px] font-medium">
-            Brand
-          </label>
-          <select id="brand-filter" name="brand" defaultValue={brand?.id ?? ""} className={SELECT}>
-            <option value="">All my brands</option>
-            {brands.map((b) => (
-              <option key={b.id} value={b.id}>
-                {b.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <button type="submit" className={buttonClass("secondary")}>
-          Show
-        </button>
-      </form>
-
       <dl className="mt-6 grid gap-4 sm:grid-cols-3">
         {stats.map((stat) => (
           <Card key={stat.label}>

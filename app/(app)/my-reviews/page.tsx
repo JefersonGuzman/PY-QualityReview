@@ -1,18 +1,33 @@
+import { Suspense } from "react";
 import { ReviewSummary } from "@/components/review-summary";
+import { CardsSkeleton } from "@/components/skeletons";
 import { Card, EmptyState, FOCUS, PageTitle, StatusBadge } from "@/components/ui";
 import { listResponsesForSpecialist } from "@/lib/data/responses";
 import { requireRole } from "@/lib/data/session";
 import { formatDate } from "@/lib/domain/format";
+import type { User } from "@/lib/domain/types";
 
 // Specialist: only their own responses and the feedback they received.
 export default async function MyReviewsPage() {
+  // Role check before anything streams, so a wrong role still gets a real 403.
   const user = await requireRole("specialist");
+
+  return (
+    <>
+      <PageTitle>My Reviews</PageTitle>
+      <Suspense fallback={<CardsSkeleton label="Loading your reviews" />}>
+        <MyReviewsContent user={user} />
+      </Suspense>
+    </>
+  );
+}
+
+async function MyReviewsContent({ user }: { user: User }) {
   const responses = await listResponsesForSpecialist(user);
   const reviewed = responses.filter((response) => response.review !== null).length;
 
   return (
     <>
-      <PageTitle>My Reviews</PageTitle>
       <p className="mt-2 text-muted">
         {reviewed} of {responses.length} of your responses have been reviewed.
       </p>
