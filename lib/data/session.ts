@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { cookies } from "next/headers";
 import { forbidden, redirect } from "next/navigation";
 import { IDENTITY_COOKIE, parseIdentity } from "@/lib/domain/identity";
@@ -6,10 +7,11 @@ import type { Role, User } from "@/lib/domain/types";
 import { findUser } from "./users";
 
 // Active user of the request. The role always comes from the database, never from the client.
-export async function getCurrentUser(): Promise<User | null> {
+// Cached per request: the layout, the page and the home link all ask for it.
+export const getCurrentUser = cache(async (): Promise<User | null> => {
   const userId = parseIdentity((await cookies()).get(IDENTITY_COOKIE)?.value, Date.now());
   return userId ? findUser(userId) : null;
-}
+});
 
 export async function requireUser(): Promise<User> {
   const user = await getCurrentUser();
