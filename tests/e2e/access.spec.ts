@@ -20,6 +20,7 @@ test("a Specialist only sees their own replies, in the UI and in the API", async
   const denied = await page.goto("/responses");
   expect(denied?.status()).toBe(403);
   await expect(page.getByRole("heading", { name: "Access denied" })).toBeVisible();
+  expect((await page.goto("/dashboard"))?.status()).toBe(403);
 
   // Asking the API directly for another Specialist's reply (Leo's) says no.
   expect((await page.request.get("/api/responses/lu-301")).status()).toBe(404);

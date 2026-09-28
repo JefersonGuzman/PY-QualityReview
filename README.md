@@ -75,5 +75,5 @@ Small branches, one pull request each, reviewed in writing on GitHub before merg
 ## Time spent
 
 ```text
-Actual implementation time: TBD
+Actual implementation time: this repository was started on 27 Sep 2026 at 18:30.
 ```

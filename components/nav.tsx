@@ -6,7 +6,10 @@ import { FOCUS } from "@/components/ui";
 import type { Role } from "@/lib/domain/types";
 
 const LINKS: Record<Role, { href: string; label: string }[]> = {
-  team_lead: [{ href: "/responses", label: "Responses" }],
+  team_lead: [
+    { href: "/responses", label: "Responses" },
+    { href: "/dashboard", label: "Dashboard" },
+  ],
   specialist: [{ href: "/my-reviews", label: "My Reviews" }],
 };
 
