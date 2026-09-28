@@ -38,7 +38,11 @@ The identity is a stubbed cookie with the user id. Real authentication would mea
 
 **Where the agent was right, and where I overrode it.** It was right to put the data rules in the database as well as in the app, and right to answer 404 for another brand's reply. I overrode it when it planned one large pull request at the end, and when its first seed ignored the brief (two specialists, generic brands that all sounded the same).
 
-**A prompt I am pleased with.** *(to be completed)*
+**A session excerpt I am pleased with.** Halfway through the build the agent read the brief again and stopped before publishing anything:
+
+> The brief changes several important things, and they need adjusting before anything is published: (1) one small branch and PR per piece of work, reviewed in writing before merging, not one big PR at the end; (2) the seed needs at least three Specialists and two Team Leads, with brands that clearly do not sound alike; (3) quality depends on the brand, so the brand's guidelines go next to the reply under review; (4) "if we ask the API directly for another brand's data, it should say no", so the isolation must be reachable and tested through an API, not only through pages.
+
+That checkpoint is why the history below is five small pull requests instead of one.
 
 ## Status
 
