@@ -52,6 +52,7 @@ With the database running:
 
 ```bash
 npm run lint
+npm run typecheck                 # generates Next route types, then runs tsc
 npm run test                      # Vitest: rules, data access and brand isolation against the local database
 npx playwright install chromium   # first time only
 npm run test:e2e                  # Playwright: main journeys against a production build
@@ -79,5 +80,5 @@ Small branches, one pull request each, reviewed in writing on GitHub before merg
 ## Time spent
 
 ```text
-Actual implementation time: this repository was started on 27 Sep 2026 at 18:30 and finished at 21:49.
+Actual implementation time: this repository was started on 27 Sep 2026 at 18:30 and finished at 22:20.
 ```
