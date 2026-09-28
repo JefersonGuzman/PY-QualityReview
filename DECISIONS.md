@@ -18,6 +18,36 @@
 
 **What I would ask before V2.** Does the brand ever see this directly, or only through the team lead? How many replies a day per brand, and do team leads read a random sample or a chosen one? Do two team leads covering one brand need to agree on scores (calibration)? Should specialists be able to answer a review?
 
-## Architecture, AI and status
+## Architecture
 
-Added as the work lands, one pull request at a time.
+**Shape.** Next.js App Router with server components; pure rules in `lib/domain`, server-only data access in `lib/data`, Postgres on local Supabase. Pages, server actions and the JSON API call the same `lib/data` functions, so there is one place where "who may see what" lives.
+
+**Data model.** `users` (global role), `brands` (with `guidelines`), `user_brands` (membership = access), `responses` (one brand, one specialist), `reviews` (at most one per response), `review_issues` + `issue_types`. `reviews` repeats the response's `brand_id` so composite foreign keys can guarantee that the author and the reviewer belong to that brand; triggers check roles, block deleting reviews and block changing a role that data depends on.
+
+**Authorisation, in two layers.**
+1. *Application:* every read in `lib/data` is scoped to the current user (joined through `user_brands`, or filtered by `specialist_id`). A reply of another brand answers **404** (page and API alike), so its existence is not revealed; a page for another role answers **403**. The role always comes from the database, never from the request.
+2. *Database:* constraints make cross-brand or wrong-role *writes* impossible, whatever the application does.
+
+The identity is a stubbed cookie with the user id. Real authentication would mean Supabase Auth (SSO) linked to `users`, the Supabase session instead of the cookie, connecting as the `authenticated` role instead of the owner, and Row Level Security policies keyed on `auth.uid()` as a third layer for reads.
+
+**What breaks first as this grows.** The queue loads everything: at hundreds of replies a day it needs pagination and a "yesterday" default. The dashboard aggregates on every request, fine until tens of thousands of reviews, then it wants a materialised view. Per-brand rubrics would be an additive migration (`issue_types.brand_id`, nullable), not a rewrite.
+
+## AI
+
+**How I worked.** An AI coding agent (Claude Code) wrote the code, tests and first drafts of the docs; I steered it, read every pull request and reviewed it in writing before merging. A first attempt used heavy spec-driven ceremony (requirement interview, formal spec, QA pass, plan, task list, review of every task). It produced a solid foundation but spent far too much of the time budget on paperwork, so I discarded it and rebuilt this repository with small vertical slices and one reviewed pull request per slice.
+
+**Where the agent was right, and where I overrode it.** It was right to put the data rules in the database as well as in the app, and right to answer 404 for another brand's reply. I overrode it when it planned one large pull request at the end, and when its first seed ignored the brief (two specialists, generic brands that all sounded the same).
+
+**A prompt I am pleased with.** *(to be completed)*
+
+## Status
+
+**Finished.** User switcher; brand and role isolation in pages, JSON API and database; review loop (create, update by author, validation on the server); specialist read-back; per-brand dashboard with weekly trend, recurring issues, by specialist and recent reviews; deterministic seed; unit, database and end-to-end tests.
+
+**Half done.** States: empty and error states are designed; there are no loading skeletons, because a `loading.tsx` around the role check would turn the real 403 into a 200. The trend is by week of sending, with no date range.
+
+**Never touched.** Coaching library, helpdesk import, real authentication, pagination, history of review edits.
+
+**Order I would pick it up.** Pagination and a "yesterday" queue → coaching library → review edit history → helpdesk import → real authentication with RLS.
+
+**The one thing I would flag hardest in someone else's pull request.** The app connects to Postgres as the owner, so tenant isolation for *reads* depends on every query remembering to join `user_brands`. One forgotten join in a future query leaks another brand's replies, and no layer below would stop it. I left it because with a stubbed login there is no authenticated user for RLS to key on; with real authentication, RLS is the fix, and the isolation tests are there to catch a regression until then.
