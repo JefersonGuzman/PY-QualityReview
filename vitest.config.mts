@@ -14,6 +14,5 @@ export default defineConfig({
     include: ["tests/unit/**/*.test.ts", "tests/db/**/*.test.ts"],
     // Database tests share one local database.
     fileParallelism: false,
-    passWithNoTests: true,
   },
 });
